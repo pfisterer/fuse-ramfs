@@ -1,0 +1,4 @@
+fuse-test
+testdir
+*.o
+out.txt
