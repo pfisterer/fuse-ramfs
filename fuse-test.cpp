@@ -27,7 +27,7 @@ map<int, unsigned char> to_map(string data) {
 	map<int, unsigned char> data_map;
 	int i = 0;
 	
-	for (string::iterator it = data.begin() ; it < data.end(); ++it)
+	for (string::iterator it = data.begin(); it < data.end(); ++it)
 		data_map[i++] = *it;
 		
 	return data_map;
@@ -51,8 +51,6 @@ static int ramfs_getattr(const char* path, struct stat* stbuf) {
 	int res = 0;
 	memset(stbuf, 0, sizeof(struct stat));
 
-	
-	
 	if(filename == "/") { //Attribute des Wurzelverzeichnisses
 		cout << "ramfs_getattr("<<filename<<"): Returning attributes for /" << endl;
 		stbuf->st_mode = S_IFDIR | 0777;
@@ -172,10 +170,9 @@ int ramfs_write(const char* path, const char* data, size_t size, off_t offset, s
 		return -ENOENT;
 	}
 
-	//Datei existiert. Lese in Puffer
-	map<int, unsigned char> &file = files[filename];
-	
+	//Datei existiert. Schreibe in Puffer
 	cout << "ramfs_write("<<filename<<"): Writing "<< size << " bytes startting with offset "<< offset<<endl;
+	map<int, unsigned char> &file = files[filename];
 	
 	for(size_t i = 0; i < size; ++i)
 		file[offset + i] = data[i];
