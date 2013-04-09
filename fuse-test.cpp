@@ -11,6 +11,8 @@ extern "C" {
 #include <string.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <sys/types.h>
 
 typedef map<string, map<int, unsigned char> > FileMap;
 static FileMap files;
@@ -48,6 +50,10 @@ static string strip_leading_slash(string filename) {
 static int ramfs_getattr(const char* path, struct stat* stbuf) {
 	string filename = strip_leading_slash(filename);
 	memset(stbuf, 0, sizeof(struct stat));
+	
+	//Setze owner and group auf die des aktuell eingeloggten Users
+	//stbuf->st_uid = getuid();
+	//stbuf->st_gid = getgid();
 	
 	if(string(path) == "/") { //Attribute des Wurzelverzeichnisses
 		cout << "ramfs_getattr("<<filename<<"): Returning attributes for /" << endl;
@@ -196,6 +202,7 @@ int main(int argc, char *argv[])
 	ramfs_oper.unlink 	= ramfs_unlink;
 	
 	//Starten des Dateisystems
+	cout << "ramfs starting" << endl;
 	return fuse_main(argc, argv, &ramfs_oper, NULL);
 }
 
