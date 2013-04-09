@@ -16,16 +16,14 @@ typedef map<string, map<int, unsigned char> > FileMap;
 static FileMap files;
 
 /** Prüft, ob eine Datei breits existiert */
-static bool file_exists(string filename) 
-{
+static bool file_exists(string filename) {
 	bool b = files.find(filename) != files.end();
 	cout << "file_exists: " << filename << ": " << b << endl;
 	return b;
 }
 
 /** Konvertiert einen String in eine map mit einzelnen bytes */
-map<int, unsigned char> to_map(string data) 
-{
+map<int, unsigned char> to_map(string data) {
 	map<int, unsigned char> data_map;
 	int i = 0;
 	
@@ -36,8 +34,7 @@ map<int, unsigned char> to_map(string data)
 }
 
 /** Entfernt einen potenziell vorhandenen / am Anfang */
-static string strip_leading_slash(string filename) 
-{
+static string strip_leading_slash(string filename) {
 	bool starts_with_slash = false;
 	
 	if( filename.size() > 0 )
@@ -48,32 +45,26 @@ static string strip_leading_slash(string filename)
 }
 
 /** Liefert Dateiattribute zurück */
-static int ramfs_getattr(const char *path, struct stat *stbuf) 
-{
+static int ramfs_getattr(const char* path, struct stat* stbuf) {
 	string filename = path;
 	string stripped_slash = strip_leading_slash(filename);
 	int res = 0;
 	memset(stbuf, 0, sizeof(struct stat));
 
 	
-	//Attribute des Wurzelverzeichnisses
-	if(filename == "/") 
-	{
+	
+	if(filename == "/") { //Attribute des Wurzelverzeichnisses
 		cout << "ramfs_getattr("<<filename<<"): Returning attributes for /" << endl;
 		stbuf->st_mode = S_IFDIR | 0777;
 		stbuf->st_nlink = 2;
-	} 
-	//Eine existierende Datei wird gelesen
-	else if(file_exists(stripped_slash)) 
-	{
+		
+	} else if(file_exists(stripped_slash)) { //Eine existierende Datei wird gelesen
 		cout << "ramfs_getattr("<<stripped_slash<<"): Returning attributes" << endl;
 		stbuf->st_mode = S_IFREG | 0777;
 		stbuf->st_nlink = 1;
 		stbuf->st_size = files[stripped_slash].size();
-	}
-	//Datei nicht vorhanden
-	else 
-	{
+		
+	} else { //Datei nicht vorhanden
 		cout << "ramfs_getattr("<<stripped_slash<<"): not found" << endl;
 		res = -ENOENT;
 	}
@@ -82,12 +73,11 @@ static int ramfs_getattr(const char *path, struct stat *stbuf)
 }
 
 /** Liest den Inhalt eines Verzeichnisses aus */
-static int ramfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
-                         off_t offset, struct fuse_file_info *fi)
-{
+static int ramfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
+							off_t offset, struct fuse_file_info* fi) {
+								
 	//Dateisystem kennt keine Unterverzeichnisse
-	if(strcmp(path, "/") != 0)
-	{
+	if(strcmp(path, "/") != 0)	{
 		cout << "ramfs_readdir("<<path<<"): Only / allowed" << endl;
 		return -ENOENT;
 	}
@@ -104,13 +94,11 @@ static int ramfs_readdir(const char *path, void *buf, fuse_fill_dir_t filler,
 }
 
 /** "Öffnet" eine Datei */
-static int ramfs_open(const char *path, struct fuse_file_info *fi)
-{
+static int ramfs_open(const char* path, struct fuse_file_info* fi) {
 	string filename = strip_leading_slash(path);
 	
 	//Datei nicht vorhanden
-	if( !file_exists(filename) ) 
-	{
+	if( !file_exists(filename) ) {
 		cout << "ramfs_readdir("<<filename<<"): Not found" << endl;
 		return -ENOENT;
 	}
@@ -119,14 +107,12 @@ static int ramfs_open(const char *path, struct fuse_file_info *fi)
 }
 
 /* Liest (Teile einer) Datei */
-static int ramfs_read(const char *path, char *buf, size_t size, off_t offset,
-                      struct fuse_file_info *fi)
-{
+static int ramfs_read(const char* path, char* buf, size_t size, off_t offset,
+                      struct fuse_file_info* fi) {
 	string filename = strip_leading_slash(path);
 
 	//Datei nicht vorhanden
-	if( !file_exists(filename) )
-	{
+	if( !file_exists(filename) ) {
 		cout << "ramfs_read("<<filename<<"): Not found" << endl;
 		return -ENOENT;
 	}
@@ -136,24 +122,19 @@ static int ramfs_read(const char *path, char *buf, size_t size, off_t offset,
 	size_t len = file.size();
 	
 	//Prüfe, wieviele Bytes ab welchem Offset gelesen werden können
-	if (offset < len) 
-	{
-		if (offset + size > len) 
-		{
+	if (offset < len) {
+		if (offset + size > len) {
 			cout << "ramfs_read("<<filename<<"): offset("<<offset<<
 				") + size("<<size<<") > len("<<len<<"), setting to " << len - offset << endl;
 			
 			size = len - offset;
 		}
 
-		//		
 		cout << "ramfs_read("<<filename<<"): Reading "<< size << " bytes"<<endl;
 		for(size_t i = 0; i < size; ++i)
 			buf[i] = file[offset + i];
-	}
-	//Offset war groesser als die max. Groesse der Datei
-	else 
-	{
+		
+	} else { //Offset war groesser als die max. Groesse der Datei
 		return -EINVAL;
 	}
 
@@ -161,19 +142,17 @@ static int ramfs_read(const char *path, char *buf, size_t size, off_t offset,
 }
 
 /** Erzeugt ein neues Dateisystemelement */
-int ramfs_mknod(const char *path, mode_t mode, dev_t dev) 
-{
+int ramfs_mknod(const char* path, mode_t mode, dev_t dev) {
 	string filename = strip_leading_slash(path);
+	
 	//Datei bereits vorhanden
-	if( file_exists(filename) )
-	{
+	if( file_exists(filename) ) {
 		cout << "ramfs_mknod("<<filename<<"): Already exists" << endl;
 		return -EEXIST;
 	}
 	
-	//Datei bereits vorhanden
-	if( (mode & S_IFREG) == 0)
-	{
+	//Es wird versucht, etwas anderes als eine normale Datei anzulegen
+	if( (mode & S_IFREG) == 0)	{
 		cout << "ramfs_mknod("<<filename<<"): Only files may be created" << endl;
 		return -EINVAL;
 	}
@@ -184,13 +163,11 @@ int ramfs_mknod(const char *path, mode_t mode, dev_t dev)
 }
 
 /** Schreibt Daten in eine (offene) Datei */
-int ramfs_write(const char *path, const char *data, size_t size, off_t offset, struct fuse_file_info *) 
-{
+int ramfs_write(const char* path, const char* data, size_t size, off_t offset, struct fuse_file_info*) {
 	string filename = strip_leading_slash(path);
 	
 	//Datei nicht vorhanden
-	if( !file_exists(filename) )
-	{
+	if( !file_exists(filename) ) {
 		cout << "ramfs_write("<<filename<<"): Not found" << endl;
 		return -ENOENT;
 	}
@@ -207,8 +184,7 @@ int ramfs_write(const char *path, const char *data, size_t size, off_t offset, s
 }
 
 /** Löscht eine Datei */
-int ramfs_unlink(const char *pathname) 
-{
+int ramfs_unlink(const char *pathname) {
 	files.erase( strip_leading_slash(pathname) );
 	return 0;
 }
@@ -216,8 +192,7 @@ int ramfs_unlink(const char *pathname)
 //Enthält die Funktionspointer auf die implementierten Operationen
 static struct fuse_operations ramfs_oper;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char** argv) {
 	//Zuweisen der einzelnen Funktionspointer
 	ramfs_oper.getattr	= ramfs_getattr;
 	ramfs_oper.readdir 	= ramfs_readdir;
