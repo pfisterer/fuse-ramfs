@@ -7,9 +7,10 @@ start: all
 	mkdir testdir
 	./fuse-test -f testdir > out.txt &
 	mount
-	tail -f out.txt
+	tail -f out.txt &
 
 stop:
 	( sudo umount testdir ; echo "")
 	( killall -q fuse-test ; echo "")
 	mount
+	( killall -q tail ; echo "")
