@@ -2,3 +2,5 @@ fuse-test
 testdir
 *.o
 out.txt
+
+/demo-file-io

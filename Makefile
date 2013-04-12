@@ -1,4 +1,12 @@
-all:
+all: demo-file-io fuse-test
+
+demo-file-io: demo-file-io.c
+	gcc -o demo-file-io demo-file-io.c
+
+clean: 
+	rm -f demo-file-io fuse-test
+
+fuse-test: fuse-test.cpp
 	g++ -Wall `pkg-config fuse --cflags --libs` -c fuse-test.cpp 
 	gcc fuse-test.o  -o fuse-test `pkg-config fuse --cflags --libs` -lstdc++
 
