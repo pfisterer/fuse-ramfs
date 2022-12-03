@@ -18,7 +18,7 @@ typedef map<int, unsigned char> FileContents;
 typedef map<string, FileContents> FileMap;
 static FileMap files;
 
-/** Prüft, ob eine Datei breits existiert */
+/** Prï¿½ft, ob eine Datei breits existiert */
 static bool file_exists(string filename) {
 	bool b = files.find(filename) != files.end();
 	cout << "file_exists: " << filename << ": " << b << endl;
@@ -47,7 +47,7 @@ static string strip_leading_slash(string filename) {
 	return starts_with_slash ? filename.substr(1, string::npos) : filename;
 }
 
-/** Liefert Dateiattribute zurück */
+/** Liefert Dateiattribute zurï¿½ck */
 static int ramfs_getattr(const char* path, struct stat* stbuf) {
 	string filename = path;
 	string stripped_slash = strip_leading_slash(filename);
@@ -88,18 +88,18 @@ static int ramfs_readdir(const char* path, void* buf, fuse_fill_dir_t filler,
 		return -ENOENT;
 	}
 
-	//Diese Dateien müssen immer existieren
+	//Diese Dateien mï¿½ssen immer existieren
 	filler(buf, ".", NULL, 0);
 	filler(buf, "..", NULL, 0);
 	
-	//Füge alle Dateien hinzu
+	//Fï¿½ge alle Dateien hinzu
 	for (FileMap::iterator it = files.begin(); it != files.end(); it++) 
 		filler(buf, it->first.c_str(), NULL, 0);
 	
 	return 0;
 }
 
-/** "Öffnet" eine Datei */
+/** "ï¿½ffnet" eine Datei */
 static int ramfs_open(const char* path, struct fuse_file_info* fi) {
 	string filename = strip_leading_slash(path);
 	
@@ -127,8 +127,8 @@ static int ramfs_read(const char* path, char* buf, size_t size, off_t offset,
 	FileContents &file = files[filename];
 	size_t len = file.size();
 	
-	//Prüfe, wieviele Bytes ab welchem Offset gelesen werden können
-	if (offset < len) {
+	//Prï¿½fe, wieviele Bytes ab welchem Offset gelesen werden kï¿½nnen
+	if (static_cast<std::size_t>(offset) < len) {
 		if (offset + size > len) {
 			cout << "ramfs_read("<<filename<<"): offset("<<offset<<
 				") + size("<<size<<") > len("<<len<<"), setting to " << len - offset << endl;
@@ -167,7 +167,7 @@ int ramfs_write(const char* path, const char* data, size_t size, off_t offset, s
 	return size;
 }
 
-/** Löscht eine Datei */
+/** Lï¿½scht eine Datei */
 int ramfs_unlink(const char *pathname) {
 	files.erase( strip_leading_slash(pathname) );
 	return 0;
@@ -222,11 +222,11 @@ int ramfs_truncate(const char* path, off_t length) {
 	
 	FileContents &file = files[filename];
 	
-	if ( file.size() > length ) {
+	if ( file.size() > static_cast<std::size_t>(length) ) {
 		cout << "ramfs_truncate("<<filename<<"): Truncating current size ("<<file.size()<<") to ("<<length<<")" << endl;
 		file.erase( file.find(length) , file.end() );
 		
-	} else if ( file.size() < length ) {
+	} else if ( file.size() < static_cast<std::size_t>(length) ) {
 		cout << "ramfs_truncate("<<filename<<"): Enlarging current size ("<<file.size()<<") to ("<<length<<")" << endl;
 
 		for(int i = file.size(); i < length; ++i)
@@ -251,7 +251,7 @@ int ramfs_bmap(const char *, size_t blocksize, uint64_t *idx) {  cout << "ramfs_
 int ramfs_setxattr(const char *, const char *, const char *, size_t, int) {  cout << "ramfs_setxattr not implemented" << endl; return -EINVAL; }
 
 
-//Enthält die Funktionspointer auf die implementierten Operationen
+//Enthï¿½lt die Funktionspointer auf die implementierten Operationen
 static struct fuse_operations ramfs_oper;
 
 int main(int argc, char** argv) {
